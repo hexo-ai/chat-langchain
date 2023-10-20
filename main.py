@@ -142,14 +142,14 @@ def format_docs(docs: Sequence[Document]) -> str:
     return "\n".join(formatted_docs)
 
 
-def serialize_history(request: ChatRequest):
+def serialize_history(request: dict[str, str]):
     chat_history = ChatRequest.parse_obj(request).chat_history
     converted_chat_history = []
     for message in chat_history:
-        if message.get("human") is not None:
-            converted_chat_history.append(HumanMessage(content=message["human"]))
-        if message.get("ai") is not None:
-            converted_chat_history.append(AIMessage(content=message["ai"]))
+        if (human := message.get("human")) is not None:
+            converted_chat_history.append(HumanMessage(content=human))
+        if (ai := message.get("ai")) is not None:
+            converted_chat_history.append(AIMessage(content=ai))
     return converted_chat_history
 
 
