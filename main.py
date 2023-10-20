@@ -2,7 +2,7 @@
 import asyncio
 import os
 from operator import itemgetter
-from typing import Dict, List, Optional, Sequence
+from typing import Sequence, cast
 
 import langsmith
 import langsmith.utils
@@ -45,8 +45,8 @@ of the sentence or paragraph that reference them - do not put them all at the en
 different results refer to different entities within the same name, write separate \
 answers for each entity.
 
-You should use bullet points in your answer for readability. Put citations where they apply
-rather than putting them all at the end.
+You should use bullet points in your answer for readability.
+Put citations where they apply rather than putting them all at the end.
 
 If there is nothing in the context relevant to the question at hand, just say "Hmm, \
 I'm not sure." Don't try to make up an answer.
@@ -89,7 +89,7 @@ app.add_middleware(
 
 class ChatRequest(BaseModel):
     question: str
-    chat_history: Optional[List[Dict[str, str]]]
+    chat_history: list[dict[str, str]] = []
 
 
 def get_retriever() -> BaseRetriever:
@@ -120,9 +120,9 @@ def create_retriever_chain(
     conversation_chain = condense_question_chain | retriever
     return RunnableBranch(
         (
-            RunnableLambda(lambda x: bool(x.get("chat_history"))).with_config(
-                run_name="HasChatHistoryCheck"
-            ),
+            RunnableLambda(
+                lambda x: bool(cast(dict, x).get("chat_history"))
+            ).with_config(run_name="HasChatHistoryCheck"),
             conversation_chain.with_config(run_name="RetrievalChainWithHistory"),
         ),
         (
@@ -143,7 +143,7 @@ def format_docs(docs: Sequence[Document]) -> str:
 
 
 def serialize_history(request: ChatRequest):
-    chat_history = request.get("chat_history", [])
+    chat_history = ChatRequest.parse_obj(request).chat_history
     converted_chat_history = []
     for message in chat_history:
         if message.get("human") is not None:
