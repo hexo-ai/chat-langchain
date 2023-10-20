@@ -5,6 +5,7 @@ from operator import itemgetter
 from typing import Dict, List, Optional, Sequence
 
 import langsmith
+import langsmith.utils
 import weaviate
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,6 +26,10 @@ from langsmith import Client
 from pydantic import BaseModel
 
 from constants import WEAVIATE_DOCS_INDEX_NAME
+
+WEAVIATE_URL = os.environ["WEAVIATE_URL"]
+WEAVIATE_API_KEY = os.environ["WEAVIATE_API_KEY"]
+LANGCHAIN_TRACING_V2 = os.environ.get("LANGCHAIN_TRACING_V2", "false").lower() == "true"
 
 RESPONSE_TEMPLATE = """\
 You are an expert programmer and problem-solver, tasked with answering any question \
@@ -69,7 +74,7 @@ Follow Up Input: {question}
 Standalone Question:"""
 
 
-client = Client()
+client = Client() if LANGCHAIN_TRACING_V2 else None
 
 app = FastAPI()
 app.add_middleware(
@@ -80,10 +85,6 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
-
-
-WEAVIATE_URL = os.environ["WEAVIATE_URL"]
-WEAVIATE_API_KEY = os.environ["WEAVIATE_API_KEY"]
 
 
 class ChatRequest(BaseModel):
@@ -142,7 +143,7 @@ def format_docs(docs: Sequence[Document]) -> str:
 
 
 def serialize_history(request: ChatRequest):
-    chat_history = request["chat_history"] or []
+    chat_history = request.get("chat_history", [])
     converted_chat_history = []
     for message in chat_history:
         if message.get("human") is not None:
@@ -193,7 +194,7 @@ def create_chain(
 
 
 llm = ChatOpenAI(
-    model="gpt-3.5-turbo-16k",
+    model_name="gpt-3.5-turbo-16k",
     streaming=True,
     temperature=0,
 )
@@ -218,7 +219,8 @@ async def send_feedback(request: Request):
         }
     key = data.get("key", "user_score")
     vals = {**data, "key": key}
-    client.create_feedback(**vals)
+    if client is not None:
+        client.create_feedback(**vals)
     return {"result": "posted feedback successfully", "code": 200}
 
 
@@ -231,11 +233,12 @@ async def update_feedback(request: Request):
             "result": "No feedback ID provided",
             "code": 400,
         }
-    client.update_feedback(
-        feedback_id,
-        score=data.get("score"),
-        comment=data.get("comment"),
-    )
+    if client is not None:
+        client.update_feedback(
+            feedback_id,
+            score=data.get("score"),
+            comment=data.get("comment"),
+        )
     return {"result": "patched feedback successfully", "code": 200}
 
 
@@ -245,6 +248,8 @@ async def _arun(func, *args, **kwargs):
 
 
 async def aget_trace_url(run_id: str) -> str:
+    if client is None:
+        return "https://langsmith.dev"
     for i in range(5):
         try:
             await _arun(client.read_run, run_id)

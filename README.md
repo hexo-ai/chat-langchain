@@ -1,3 +1,6 @@
+> [!NOTE]
+> This fork is to fix the errors that show up when the LangSmith API key is not provided. As of right now (20th Oct 2023), the env variable `LANGCHAIN_TRACING_V2` does not toggle the logging functionality.
+
 # 🦜️🔗 Chat LangChain
 
 This repo is an implementation of a locally hosted chatbot specifically focused on question answering over the [LangChain documentation](https://langchain.readthedocs.io/en/latest/).
@@ -8,7 +11,7 @@ Deployed version: [chat.langchain.com](https://chat.langchain.com)
 The app leverages LangChain's streaming support and async API to update the page in real time for multiple users.
 
 ## ✅ Running locally
-1. Install backend dependencies: `poetry install`.
+1. Install backend dependencies: `make install`.
 1. Make sure to enter your environment variables to configure the application:
 ```
 export OPENAI_API_KEY=
@@ -22,9 +25,9 @@ export LANGCHAIN_ENDPOINT="https://api.smith.langchain.com"
 export LANGCHAIN_API_KEY=
 export LANGCHAIN_PROJECT=
 ```
-1. Run `python ingest.py` to ingest LangChain docs data into the Weaviate vectorstore (only needs to be done once).
+1. Run `make ingest` to ingest LangChain docs data into the Weaviate vectorstore (only needs to be done once).
    1. You can use other [Document Loaders](https://langchain.readthedocs.io/en/latest/modules/document_loaders.html) to load your own data into the vectorstore.
-1. Start the Python backend with `poetry run make start`.
+1. Start the Python backend with `make start`.
 1. Install frontend dependencies by running `cd chat-langchain`, then `yarn`.
 1. Run the frontend with `yarn dev` for frontend.
 1. Open [localhost:3000](http://localhost:3000) in your browser.
