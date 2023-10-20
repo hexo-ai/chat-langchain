@@ -25,6 +25,8 @@ export LANGCHAIN_ENDPOINT="https://api.smith.langchain.com"
 export LANGCHAIN_API_KEY=
 export LANGCHAIN_PROJECT=
 ```
+1. Create `.env` from `.env.example`.
+1. Run `export $(cat .env | xargs)` for Linux/macOS, and `set > .env` for Windows.
 1. Run `make ingest` to ingest LangChain docs data into the Weaviate vectorstore (only needs to be done once).
    1. You can use other [Document Loaders](https://langchain.readthedocs.io/en/latest/modules/document_loaders.html) to load your own data into the vectorstore.
 1. Start the Python backend with `make start`.

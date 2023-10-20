@@ -1,17 +1,14 @@
-.PHONY: .export-env
-.export-env:
-	export $(cat .env | xargs)
 
 .PHONY: install
 install:
 	poetry install
 
 .PHONY: ingest
-ingest: .export-env
+ingest:
 	poetry run python ingest.py
 
 .PHONY: start
-start: .export-env
+start:
 	poetry run uvicorn main:app --reload --port 8080
 
 .PHONY: format
